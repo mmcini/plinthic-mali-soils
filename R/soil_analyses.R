@@ -1,4 +1,6 @@
+library(extrafont)
 library(tidyverse)
+library(patchwork)
 library(ggrepel)
 library(ggpubr)
 library(readxl)
@@ -67,3 +69,40 @@ phys_pca_plot
 ## Plot arrange
 ggarrange(chem_pca_plot, phys_pca_plot, ncol = 1, common.legend = T, legend = "bottom")
 ggsave("../../Figures/pca.jpeg", units = "mm", width = 130, height = 260, bg = "white")
+
+# pXRF #############################################################################################
+pxrf_data <- read_xlsx("../data/pxrf_data.xlsx")
+
+band_data <- pxrf_data %>%
+             filter(str_detect(Profile, "B")) %>%
+             select("Profile":"Ti") %>%
+             pivot_longer(cols = "Si":"Ti", names_to = "Elements", values_to = "Content")
+
+band_pxrf_plot <- ggplot(band_data, aes(x = -Depth, y = Content)) +
+                  xlab("Depth (cm)") + ylab("") +
+                  geom_point() + geom_line() + 
+                  coord_flip() + 
+                  facet_grid(Profile~Elements, scales = "free") +
+                  theme_bw()+
+                  theme(text = element_text(family = "Times New Roman"),
+                        panel.grid = element_blank(),
+                        legend.title = element_blank())
+
+siani_data <- pxrf_data %>%
+              filter(str_detect(Profile, "S")) %>%
+              select("Profile":"Ti") %>%
+              pivot_longer(cols = "Si":"Ti", names_to = "Elements", values_to = "Content")
+
+siani_pxrf_plot <- ggplot(siani_data, aes(x = -Depth, y = Content)) +
+                   xlab("Depth (cm)") + ylab("Content (%)") +
+                   geom_point() + geom_line() + 
+                   coord_flip() + 
+                   facet_grid(Profile~Elements, scales = "free") +
+                   theme_bw()+
+                   theme(text = element_text(family = "Times New Roman"),
+                         panel.grid = element_blank(),
+                         legend.title = element_blank())
+
+band_pxrf_plot + siani_pxrf_plot + plot_layout(ncol = 1)
+
+ggsave("../../Figures/depth_func.jpeg", units = "mm", width = 210, height = 297, bg = "white")
